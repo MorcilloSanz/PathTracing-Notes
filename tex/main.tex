@@ -276,7 +276,7 @@ $$L_{o} \left (  p, w_{o} \right ) = L_{e} \left (  p, w_{o} \right ) + \int_{\O
 Solving the previous equation using Monte Carlo and the Cook Torrance BRDF we get the following estimator:
 $$\hat{L}_{o}\left (  p, w_{o} \right ) = L_{e} \left (  p, w_{o} \right ) + \frac{2\pi}{N}\sum_{i=0}^{N}\left[  k_{d}\frac{c}{\pi} + \frac{DFG}{4\left( \omega_{o} \cdot n \right)\left( \omega_{i} \cdot n \right)} \right]L_{i} \left (  p, w_{i} \right ) \left ( w_{i} \cdot n \right )$$
 
-\section{Summary}
+\section{Algorithm overview}
 
 \begin{itemize}
   \item For each pixel throw a ray from the camera.
@@ -289,10 +289,35 @@ $$\hat{L}_{o}\left (  p, w_{o} \right ) = L_{e} \left (  p, w_{o} \right ) + \fr
   \item Consider bidirectional path tracing in order to get better results. Some times, depending on the environment, reaching a light is quite difficult, so that all the scene would be much darker (or even completely black) than it should be. So one way to solve this is not only throwing rays from the camera, but also from the light source and joining them in the same path. 
 \end{itemize}
 
+\section{Ray tracing and global illumination approach}
+There are points in the scene that are directly illuminated, that is, there is no object between the light source and the point. So we know with certainty, that point will be illuminated by that light source. However, using pure path tracing implies that some rays with random directions may not reach the light source, obtaining noisy results.\newline
+In order to solve this, it is possible to compute the direct and indirect lighting and combine them together. 
+
+\begin{itemize}
+  \item Direct lighting: throw a ray from the point to each light source in the scene. Consider the light source if the ray DOES NOT intersect with any other object in the scene, that is, that the point is directly illuminated by that light source.
+  Thus, each $L_i$ is nothing but each light source that contributes directly to the illumination of the point.
+  $$L_{dl} \left (  p, w_{o} \right ) = L_{e} \left (  p, w_{o} \right ) + \int_{\Omega} f_{r}\left (  p, w_{i}, w_{o} \right ) L_{i} w_{i} \cdot n dw_{i}$$
+  \item Indirect lighting: to compute the indirect lighting just solve recursively the rendering equation as we do in pure path tracing:
+  $$L_{il} \left (  p, w_{o} \right ) = L_{e} \left (  p, w_{o} \right ) + \int_{\Omega} f_{r}\left (  p, w_{i}, w_{o} \right ) L_{i} \left (  p, w_{i} \right ) \left(w_{i} \cdot n \right) dw_{i}$$
+  \item Total lighting: the total lighting is nothing but the sum of direct and indirect lighting:
+  $$L_T = L_{dl} + L_{il}$$
+\end{itemize}
+
 \section{Conclusions}
 
 Monte Carlo path tracing is noisy. Using many samples and bounces will make the image look smoother but it will take much computational time.
 \\
 A good choice would be to denoise the image after generating it, this way there is no need on generating that many rays.
+\\
+Another choice would be using the ray tracing and global illumination approach, even if it is not as realistic as the pure path tracing approach, it is less noisy and has a better performance (it can be rendered in real time).
+
+\section{Result}
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{raytracingGI.png}
+\caption{Ray tracing and global illumination}
+\label{fig:Ray tracing and global illumination}
+\end{figure}
 
 \end{document}
