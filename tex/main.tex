@@ -286,38 +286,53 @@ $$\hat{L}_{o}\left (  p, w_{o} \right ) = L_{e} \left (  p, w_{o} \right ) + \fr
   $$\hat{L}_{o1} = L_{e1} + \frac{2\pi}{N}\sum_{i=0}^{N}f_{r1}L_{i1} \left ( w_{i1} \cdot n_{1} \right ) =  L_{e1} + \frac{2\pi}{N}\sum_{i=0}^{N}f_{r1} \left(  L_{e2} + \frac{2\pi}{N}\sum_{i=0}^{N}f_{r2}L_{i2} \left ( w_{i2} \cdot n_{2} \right ) \right) \left ( w_{i1} \cdot n_{1} \right )=$$
 
   $$=L_{e1} + \frac{2\pi}{N}\sum_{i=0}^{N}f_{r1} \left[  L_{e2} + \frac{2\pi}{N}\sum_{i=0}^{N}f_{r2} \left( L_{e3} + \frac{2\pi}{N }\sum_{i=0}^{N}f_{r3} \cdot \cdot \cdot \left ( w_{i3} \cdot n_{3} \right ) \right) \left ( w_{i2} \cdot n_{2} \right ) \right] \left ( w_{i1} \cdot n_{1} \right )$$
-  \item Consider bidirectional path tracing in order to get better results. Some times, depending on the environment, reaching a light is quite difficult, so that all the scene would be much darker (or even completely black) than it should be. So one way to solve this is not only throwing rays from the camera, but also from the light source and joining them in the same path. 
 \end{itemize}
 
-\section{Ray tracing and global illumination approach}
+\section{Direct and indirect lighting approach}
 There are points in the scene that are directly illuminated, that is, there is no object between the light source and the point. So we know with certainty, that point will be illuminated by that light source. However, using pure path tracing implies that some rays with random directions may not reach the light source, obtaining noisy results.\newline
-In order to solve this, it is possible to compute the direct and indirect lighting and combine them together. 
+In order to solve this, it is possible to compute the direct and indirect lighting and combine them together (as that sum is nothing but the refracted and reflected light). 
+
+$$L_{dl} \left (  p, w_{o} \right ) = \int_{\Omega} f_{r}\left (  p, w_{i}, w_{o} \right ) L_{Di} (w_{i} \cdot n) dw_{i}$$
+
+$$L_{il} \left( p, w_{o} \right) = \int_{\Omega} f_{r}\left (  p, w_{i}, w_{o} \right ) L_{Ii} (w_{i} \cdot n) dw_{i}$$
+
+$$L_{o} \left (  p, w_{o} \right ) = L_{e} \left (  p, w_{o} \right ) + L_{dl}\left( p, w_{o} \right) + L_{il}\left( p, w_{o} \right)$$
 
 \begin{itemize}
-  \item Direct lighting: throw a ray from the point to each light source in the scene. Consider the light source if the ray DOES NOT intersect with any other object in the scene, that is, that the point is directly illuminated by that light source.
-  Thus, each $L_i$ is nothing but each light source that contributes directly to the illumination of the point.
-  $$L_{dl} \left (  p, w_{o} \right ) = L_{e} \left (  p, w_{o} \right ) + \int_{\Omega} f_{r}\left (  p, w_{i}, w_{o} \right ) L_{i} w_{i} \cdot n dw_{i}$$
-  \item Indirect lighting: to compute the indirect lighting just solve recursively the rendering equation as we do in pure path tracing:
-  $$L_{il} \left (  p, w_{o} \right ) = L_{e} \left (  p, w_{o} \right ) + \int_{\Omega} f_{r}\left (  p, w_{i}, w_{o} \right ) L_{i} \left (  p, w_{i} \right ) \left(w_{i} \cdot n \right) dw_{i}$$
-  \item Total lighting: the total lighting is nothing but the sum of direct and indirect lighting:
-  $$L_T = L_{dl} + L_{il}$$
+  \item Direct lighting: throw a ray from the point to each light source in the scene (for example, directional lights). Consider the light source if the ray DOES NOT intersect with any other object in the scene, that is, that the point is directly illuminated by that light source.
+  Thus, each $L_{Di}$ is nothing but each light source that contributes directly to the illumination of the point.
+
+  \item Indirect lighting: the rest of reflected/refracted light comes from other objects of the scene. In order to compute the indirect lighting just solve recursively the rendering equation (throwing rays, more or less randomly depending on the roughness of the material) as we do in pure path tracing:
+  $$L_{Ii} \left (  p, w_{o} \right ) = L_{o_i} \left (  p_i, w_{o_i} \right ) = L_{e_{i}} \left (  p_i, w_{o_i} \right ) + \int_{\Omega_i} f_{r}\left (  p_i, w_{j}, w_{o_i} \right ) L_{j} (w_{j} \cdot n) dw_{j}, \textit{for each ray i}$$
+  
+  Remember that it is also possible to split $\int_{\Omega_i} f_{r}\left (  p_i, w_{j}, w_{o_i} \right ) L_{j} (w_{j} \cdot n) dw_{j}$ into direct and indirect lighting:
+  
+  $$\int_{\Omega_i} f_{r}\left (  p_i, w_{j}, w_{o_i} \right ) L_{j} (w_{j} \cdot n) dw_{j} = \int_{\Omega_i} f_{r}\left (  p_i, w_{j}, w_{o_i} \right ) L_{Dj} (w_{j} \cdot n) dw_{j} + \int_{\Omega_i} f_{r}\left (  p_i, w_{j}, w_{o_i} \right ) L_{Ij} (w_{j} \cdot n) dw_{j}$$
+
+  \item Monte Carlo estimator: use the Monte Carlo estimator in order to approximate the integrals:
+  $$\int_{\Omega_i} f_{r}\left (  p_i, w_{j}, w_{o_i} \right ) L_{j} (w_{j} \cdot n) dw_{j} \approx \frac{2\pi}{N}\sum_{i=0}^{N}f_{r}\left (  p_i, w_{j}, w_{o_i} \right ) L_{j} w_{j} n$$
+  Where N is the number of samples (rays).
 \end{itemize}
 
 \section{Conclusions}
 
 Monte Carlo path tracing is noisy. Using many samples and bounces will make the image look smoother but it will take much computational time.
+\\\\
+A good choice would be using the direct and indirect lighting approach, even if it is not as realistic as the pure path tracing approach, it is less noisy and has a better performance (it can be rendered in real time).
 \\
-A good choice would be to denoise the image after generating it, this way there is no need on generating that many rays.
+Consider bidirectional path tracing in order to get better results. Some times, depending on the environment, reaching a light is quite difficult, so that all the scene would be much darker (or even completely black) than it should be. So one way to solve this is not only throwing rays from the camera, but also from the light source and joining them in the same path.
 \\
-Another choice would be using the ray tracing and global illumination approach, even if it is not as realistic as the pure path tracing approach, it is less noisy and has a better performance (it can be rendered in real time).
+Take a look at MLT (Metropolis Light Transport) which significantly improves the results.
+\\\\
+Another good choice would be to denoise the image after generating it, this way there is no need on generating that many rays. This can be achieved by using any existing denoising AI or smoothing filters.
 
 \section{Result}
 
 \begin{figure}[h]
 \centering
 \includegraphics[scale=0.5]{raytracingGI.png}
-\caption{Ray tracing and global illumination}
-\label{fig:Ray tracing and global illumination}
+\caption{Direct and indirect lighting}
+\label{fig:Direct and indirect lighting}
 \end{figure}
 
 \end{document}
